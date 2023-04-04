@@ -5,6 +5,7 @@ public class AttachPoint {
     private double Y;
     private boolean horizontalBrickPlacable;
     private boolean verticalBrickPlacable;
+    private boolean isFree = true;
 
     public AttachPoint() {
     }
@@ -30,5 +31,13 @@ public class AttachPoint {
 
     public boolean isVerticalBrickPlacable() {
         return verticalBrickPlacable;
+    }
+
+    public boolean isFree() {
+        return isFree;
+    }
+
+    public void setFree(boolean free) {
+        isFree = free;
     }
 }
