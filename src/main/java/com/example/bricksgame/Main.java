@@ -15,9 +15,7 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class Main extends Application {
@@ -98,7 +96,7 @@ public class Main extends Application {
                 .limit(singleBricksAmount)
                 .forEach(indexList::add);
 
-        for (int i = 0; i < singleBricksAmount; i++){
+        for (int i = 0; i < singleBricksAmount; i++) {
             int index = indexList.get(i);
             BrickRectangle singleBrickRectangle = new BrickRectangle(BrickType.SINGLE);
             AttachPoint attachPoint = attachPointList.get(index);
@@ -220,7 +218,6 @@ public class Main extends Application {
 
                     AttachPoint attachPoint = checkIsBrickOnAttachPoint(brickRectangle);
                     checkIsBrickPlacable(brickRectangle, attachPoint);
-                    checkIsAttachPointFree(attachPoint);
                     moveBrickRectangle(brickRectangle, attachPoint);
                     updateAttachPointList(attachPoint, brickRectangle);
 
@@ -252,22 +249,74 @@ public class Main extends Application {
 
     private void updateAttachPointList(AttachPoint busyAttachPoint, BrickRectangle brickRectangle) {
 
-        busyAttachPoint.setFree(false);
+        busyAttachPoint.setHorizontalBrickPlacable(false);
+        busyAttachPoint.setVerticalBrickPlacable(false);
         attachPointList.set(attachPointList.indexOf(busyAttachPoint), busyAttachPoint);
+        AttachPoint neighbourBusyAttachPoint = new AttachPoint();
 
         if (brickRectangle.getBrickType() != BrickType.SINGLE) {
-            AttachPoint neighbourBusyAttachPoint = new AttachPoint();
+            neighbourBusyAttachPoint = new AttachPoint();
 
             if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
                 neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 1);
             } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
                 neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 4);
             }
-            neighbourBusyAttachPoint.setFree(false);
+            neighbourBusyAttachPoint.setHorizontalBrickPlacable(false);
+            neighbourBusyAttachPoint.setVerticalBrickPlacable(false);
             attachPointList.set(neighbourBusyAttachPoint.getIndex(), neighbourBusyAttachPoint);
         }
+        updateSurroundingAttachPoints(busyAttachPoint
+                , neighbourBusyAttachPoint
+                , brickRectangle);
 
 
+    }
+
+    private void updateSurroundingAttachPoints(AttachPoint busyAttachPoint, AttachPoint neighbourBusyAttachPoint, BrickRectangle brickRectangle) {
+        List<Integer> firstColumnIndexes = Arrays.asList(0, 4, 8, 12);
+        if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
+            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
+                attachPoint.setVerticalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+
+                attachPoint = attachPointList.get(neighbourBusyAttachPoint.getIndex() - 4);
+                attachPoint.setVerticalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
+                attachPoint.setHorizontalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+        } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
+            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
+                attachPoint.setVerticalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
+                attachPoint.setHorizontalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+
+                attachPoint = attachPointList.get(neighbourBusyAttachPoint.getIndex() - 1);
+                attachPoint.setVerticalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+        } else if (brickRectangle.getBrickType() == BrickType.SINGLE) {
+            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
+                attachPoint.setVerticalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
+                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
+                attachPoint.setHorizontalBrickPlacable(false);
+                attachPointList.set(attachPoint.getIndex(), attachPoint);
+            }
+        }
     }
 
 
@@ -276,7 +325,11 @@ public class Main extends Application {
         attachPointList = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                attachPointList.add(new AttachPoint(i * 4 + j, -589 + j * 100, 10 + i * 100, j != 3, i != 3));
+                attachPointList.add(new AttachPoint(i * 4 + j
+                        , -589 + j * 100
+                        , 10 + i * 100
+                        , j != 3
+                        , i != 3));
             }
         }
     }
@@ -311,14 +364,11 @@ public class Main extends Application {
     private void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
 
         if (brickRectangle.getBrickType() == BrickType.SINGLE) return;
-        boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL & attachPoint.isHorizontalBrickPlacable();
-        boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL & attachPoint.isVerticalBrickPlacable();
+        boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
+                & attachPoint.isHorizontalBrickPlacable();
+        boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
+                & attachPoint.isVerticalBrickPlacable();
         if (isHorizontalBrickPlacable | isVerticalBrickPlacable) return;
         throw new Exception();
-    }
-
-    private void checkIsAttachPointFree(AttachPoint attachPoint) throws Exception {
-
-        if (!attachPoint.isFree()) throw new Exception();
     }
 }

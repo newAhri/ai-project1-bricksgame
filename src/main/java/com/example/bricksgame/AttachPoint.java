@@ -1,12 +1,12 @@
 package com.example.bricksgame;
 
 public class AttachPoint {
+
     private int index;
     private double X;
     private double Y;
     private boolean horizontalBrickPlacable;
     private boolean verticalBrickPlacable;
-    private boolean isFree = true;
 
     public AttachPoint() {
     }
@@ -51,11 +51,11 @@ public class AttachPoint {
         return verticalBrickPlacable;
     }
 
-    public boolean isFree() {
-        return isFree;
+    public void setHorizontalBrickPlacable(boolean horizontalBrickPlacable) {
+        this.horizontalBrickPlacable = horizontalBrickPlacable;
     }
 
-    public void setFree(boolean free) {
-        isFree = free;
+    public void setVerticalBrickPlacable(boolean verticalBrickPlacable) {
+        this.verticalBrickPlacable = verticalBrickPlacable;
     }
 }
