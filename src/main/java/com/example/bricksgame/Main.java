@@ -16,6 +16,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main extends Application {
@@ -23,6 +24,8 @@ public class Main extends Application {
     private List<AttachPoint> attachPointList;
     private List<BrickRectangle> brickRectangleList;
     private StackPane gameFieldAndBricksChoiceStackPane;
+    private boolean isPlayersTurn = true;
+    private boolean isPlayable = true;
 
 
     public static void main(String[] args) {
@@ -34,6 +37,45 @@ public class Main extends Application {
         createListOfAttachPoints();
         primaryStage.setScene(new Scene(createContent(), 1200, 420));
         primaryStage.show();
+        playGame();
+    }
+
+    private void playGame() {
+
+        checkState();
+
+    }
+
+    private void checkState() {
+
+        List<BrickType> leftBrickTypeList = brickRectangleList
+                .stream()
+                .map(BrickRectangle::getBrickType)
+                .distinct()
+                .collect(Collectors.toList());
+        if (leftBrickTypeList.isEmpty()) {
+            isPlayable = false;
+        } else {
+            checkForPossibleMove(leftBrickTypeList);
+        }
+    }
+
+    private void checkForPossibleMove(List<BrickType> leftBrickTypes) {
+
+        List<BrickRectangle> leftBrickRectangles = leftBrickTypes
+                .stream()
+                .map(BrickRectangle::new)
+                .collect(Collectors.toList());
+        for (AttachPoint attachPoint : attachPointList) {
+            for (BrickRectangle leftBrickRectangle : leftBrickRectangles) {
+                try {
+                    checkIsBrickPlacable(leftBrickRectangle, attachPoint);
+                    return;
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        isPlayable = false;
     }
 
     private Parent createContent() {
@@ -43,16 +85,7 @@ public class Main extends Application {
         hBox.setSpacing(10);
 
         createStackPaneGameFieldAndBricksChoiceRectangle();
-
         hBox.getChildren().addAll(gameFieldAndBricksChoiceStackPane);
-
-
-        /*hBox.setOnMouseClicked(e -> {
-            System.out.println("hbox" + e.getSceneX() + " " + e.getSceneY());
-        });
-        gameFieldAndBricksChoiceStackPane.setOnMouseClicked(e -> {
-            System.out.println("stackpane" + e.getSceneX() + " " + e.getSceneY());
-        });*/
 
         return hBox;
     }
@@ -173,11 +206,8 @@ public class Main extends Application {
     private void makeDraggable(BrickRectangle brickRectangle) {
 
         brickRectangle.setOnMousePressed(e -> {
-            System.out.println(e.getSceneX() + " " + e.getSceneY());
-            System.out.println(e.getScreenX() + " " + e.getScreenY());
 
-
-            if (brickRectangle.isMovable()) {
+            if (brickRectangle.isMovable() & isPlayersTurn) {
                 brickRectangle.setWidth(brickRectangle.getWidth() * 4);
                 brickRectangle.setHeight(brickRectangle.getHeight() * 4);
 
@@ -185,14 +215,12 @@ public class Main extends Application {
                 orgSceneY = e.getSceneY();
                 orgTranslateX = ((BrickRectangle) (e.getSource())).getTranslateX();
                 orgTranslateY = ((BrickRectangle) (e.getSource())).getTranslateY();
-                System.out.println("mouse pressed: orgTranslateX" + orgTranslateX + "   orgTranslateY" + orgTranslateY);
-
-
             }
         });
 
         brickRectangle.setOnMouseDragged(e -> {
-            if (brickRectangle.isMovable()) {
+
+            if (brickRectangle.isMovable() & isPlayersTurn) {
                 double offsetX = e.getSceneX() - orgSceneX;
                 double offsetY = e.getSceneY() - orgSceneY;
                 double newTranslateX = orgTranslateX + offsetX;
@@ -200,27 +228,22 @@ public class Main extends Application {
 
                 ((BrickRectangle) (e.getSource())).setTranslateX(newTranslateX);
                 ((BrickRectangle) (e.getSource())).setTranslateY(newTranslateY);
-
-                System.out.println("mouse drag: offset" + offsetX + "   orgy" + offsetY);
-                System.out.println("               transx" + newTranslateX + "   transy" + newTranslateY);
-
             }
         });
+
         brickRectangle.setOnMouseReleased(e -> {
+
             try {
-                if (brickRectangle.isMovable()) {
-
-                    /*System.out.println("mouse pressed: orgx" + orgTranslateX + "   orgy" + orgTranslateX);
-                    System.out.println("               scenex" + e.getSceneX() + "   sceney" + e.getSceneY());
-                    System.out.println("               transx" + brickRectangle.getTranslateX() + "   transy" + brickRectangle.getTranslateY());
-                    System.out.println("               layoutx" + brickRectangle.getLayoutX() + "   layouty" + brickRectangle.getLayoutY());*/
-
-
+                if (brickRectangle.isMovable() & isPlayersTurn) {
                     AttachPoint attachPoint = checkIsBrickOnAttachPoint(brickRectangle);
                     checkIsBrickPlacable(brickRectangle, attachPoint);
                     moveBrickRectangle(brickRectangle, attachPoint);
                     updateAttachPointList(attachPoint, brickRectangle);
-
+                    checkState();
+                    if (!isPlayable){
+                        finishGame();
+                    }
+                    isPlayersTurn = false;
 
                 }
 
@@ -231,7 +254,10 @@ public class Main extends Application {
                 brickRectangle.setHeight(brickRectangle.getHeight() / 4);
             }
         });
+    }
 
+    private void finishGame() {
+        
     }
 
     private void moveBrickRectangle(BrickRectangle brickRectangle, AttachPoint attachPoint) {
@@ -363,7 +389,6 @@ public class Main extends Application {
 
     private void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
 
-        if (brickRectangle.getBrickType() == BrickType.SINGLE) return;
         boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
                 & attachPoint.isHorizontalBrickPlacable();
         boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
