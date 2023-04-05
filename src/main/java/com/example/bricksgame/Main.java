@@ -92,8 +92,8 @@ public class Main extends Application {
                 brickRectangle.setWidth(brickRectangle.getWidth() / 4);
                 brickRectangle.setHeight(brickRectangle.getHeight() / 4);
 
-                brickRectangle.setTranslateX(j * 60 - 140);
-                brickRectangle.setTranslateY(i * 60 + 60);
+                brickRectangle.setTranslateX(j * 60 - 150);
+                brickRectangle.setTranslateY(i * 60 + 40);
                 makeDraggable(brickRectangle);
             }
 
@@ -126,7 +126,7 @@ public class Main extends Application {
         Random random = new Random();
         int sumArea = 0;
         int type;
-        while (sumArea <= 16) {
+        while (sumArea <= 18) {
             type = random.nextInt(4) + 1;
             switch (type) {
                 case 1:
@@ -146,22 +146,8 @@ public class Main extends Application {
         return brickRectangleList;
     }
 
-    private double startX;
-    private double startY;
-
-    /*private void makeDraggable(Node node) {
-        node.setOnMousePressed(e -> {
-            startX = e.getSceneX();
-            startY = e.getSceneY();
-
-        });
-
-        node.setOnMouseDragged(e -> {
-            node.setLayoutX(e.getSceneX() - startX);
-            node.setLayoutY(e.getSceneY() - startY);
-        });
-
-    }*/
+    double orgSceneX, orgSceneY;
+    double orgTranslateX, orgTranslateY;
 
     private void makeDraggable(BrickRectangle brickRectangle) {
 
@@ -169,44 +155,67 @@ public class Main extends Application {
             System.out.println(e.getSceneX() + " " + e.getSceneY());
             System.out.println(e.getScreenX() + " " + e.getScreenY());
 
-            
+
             if (brickRectangle.isMovable()) {
                 brickRectangle.setWidth(brickRectangle.getWidth() * 4);
                 brickRectangle.setHeight(brickRectangle.getHeight() * 4);
-                startX = e.getSceneX() - brickRectangle.getTranslateX();
-                startY = e.getSceneY() - brickRectangle.getTranslateY();
+
+                orgSceneX = e.getSceneX();
+                orgSceneY = e.getSceneY();
+                orgTranslateX = ((BrickRectangle) (e.getSource())).getTranslateX();
+                orgTranslateY = ((BrickRectangle) (e.getSource())).getTranslateY();
+                System.out.println("mouse pressed: orgTranslateX" + orgTranslateX + "   orgTranslateY" + orgTranslateY);
 
 
-                System.out.println("mouse pressed: startx" + startX + "   starty" + startY);
-                System.out.println("               scenex" + e.getSceneX() + "   sceney" + e.getSceneY());
-                System.out.println("               transx" + brickRectangle.getTranslateX() + "   transy" + brickRectangle.getTranslateY());
-                System.out.println("               layoutx" + brickRectangle.getLayoutX() + "   layouty" + brickRectangle.getLayoutY());
             }
         });
 
         brickRectangle.setOnMouseDragged(e -> {
             if (brickRectangle.isMovable()) {
-                brickRectangle.setTranslateX(e.getSceneX() - startX);
-                brickRectangle.setTranslateY(e.getSceneY() - startY);
+                double offsetX = e.getSceneX() - orgSceneX;
+                double offsetY = e.getSceneY() - orgSceneY;
+                double newTranslateX = orgTranslateX + offsetX;
+                double newTranslateY = orgTranslateY + offsetY;
+
+                ((BrickRectangle) (e.getSource())).setTranslateX(newTranslateX);
+                ((BrickRectangle) (e.getSource())).setTranslateY(newTranslateY);
+
+                System.out.println("mouse drag: offset" + offsetX + "   orgy" + offsetY);
+                System.out.println("               transx" + newTranslateX + "   transy" + newTranslateY);
+
             }
         });
         brickRectangle.setOnMouseReleased(e -> {
             try {
                 if (brickRectangle.isMovable()) {
+
+                    /*System.out.println("mouse pressed: orgx" + orgTranslateX + "   orgy" + orgTranslateX);
+                    System.out.println("               scenex" + e.getSceneX() + "   sceney" + e.getSceneY());
+                    System.out.println("               transx" + brickRectangle.getTranslateX() + "   transy" + brickRectangle.getTranslateY());
+                    System.out.println("               layoutx" + brickRectangle.getLayoutX() + "   layouty" + brickRectangle.getLayoutY());*/
+
+
                     AttachPoint attachPoint = checkIsBrickOnAttachPoint(brickRectangle);
                     checkIsBrickPlacable(brickRectangle, attachPoint);
                     checkIsAttachPointFree(attachPoint);
-                    brickRectangle.setTranslateX(attachPoint.getX());
+
+                    if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
+                        brickRectangle.setTranslateX(attachPoint.getX() + 100);
+                    } else {
+                        brickRectangle.setTranslateX(attachPoint.getX());
+                    }
+
                     brickRectangle.setTranslateY(attachPoint.getY());
                     brickRectangle.setMovable(false);
-                    AttachPoint busyAttachPoint = attachPoint;
-                    busyAttachPoint.setFree(false);
-                    attachPointList.set(attachPointList.indexOf(attachPoint), busyAttachPoint);
+                    if (brickRectangle.getBrickType() != BrickType.SINGLE) {
+                        updateAttachPointList(attachPoint, brickRectangle);
+                    }
+
                 }
 
             } catch (Exception ex) {
-                brickRectangle.setTranslateX(startX);
-                brickRectangle.setTranslateY(startY);
+                brickRectangle.setTranslateX(orgTranslateX);
+                brickRectangle.setTranslateY(orgTranslateY);
                 brickRectangle.setWidth(brickRectangle.getWidth() / 4);
                 brickRectangle.setHeight(brickRectangle.getHeight() / 4);
             }
@@ -214,19 +223,39 @@ public class Main extends Application {
 
     }
 
+    private void updateAttachPointList(AttachPoint busyAttachPoint, BrickRectangle brickRectangle) {
+
+        busyAttachPoint.setFree(false);
+        attachPointList.set(attachPointList.indexOf(busyAttachPoint), busyAttachPoint);
+
+        AttachPoint neighbourBusyAttachPoint = new AttachPoint();
+
+        if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
+            neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 1);
+        } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
+            neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 4);
+        }
+        neighbourBusyAttachPoint.setFree(false);
+        attachPointList.set(neighbourBusyAttachPoint.getIndex(), neighbourBusyAttachPoint);
+    }
+
 
     private void createListOfAttachPoints() {
         attachPointList = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                attachPointList.add(new AttachPoint(10 + j * 100, 10 + i * 100, j != 3, i != 3));
+                attachPointList.add(new AttachPoint(i * 4 + j, -589 + j * 100, 10 + i * 100, j != 3, i != 3));
             }
         }
     }
 
     private AttachPoint checkIsBrickOnAttachPoint(BrickRectangle brickRectangle) throws Exception {
-
-        double recX = brickRectangle.getTranslateX();
+        double recX;
+        if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
+            recX = brickRectangle.getTranslateX() - 100;
+        } else {
+            recX = brickRectangle.getTranslateX();
+        }
         double recY = brickRectangle.getTranslateY();
         double pointX, pointY;
         boolean attachPointIsFound = false;
@@ -257,6 +286,4 @@ public class Main extends Application {
     private void checkIsAttachPointFree(AttachPoint attachPoint) throws Exception {
         if (!attachPoint.isFree()) throw new Exception();
     }
-
-
 }
