@@ -1,4 +1,4 @@
-package com.example.bricksgame;
+package com.example.bricksgame.data;
 
 public class AttachPoint {
 

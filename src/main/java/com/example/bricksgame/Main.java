@@ -1,5 +1,8 @@
 package com.example.bricksgame;
 
+import com.example.bricksgame.data.AttachPoint;
+import com.example.bricksgame.data.BrickRectangle;
+import com.example.bricksgame.data.BrickType;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -24,6 +27,7 @@ public class Main extends Application {
     private List<AttachPoint> attachPointList;
     private List<BrickRectangle> brickRectangleList;
     private StackPane gameFieldAndBricksChoiceStackPane;
+    private GameControl gameControl = new GameControl();
     private boolean isPlayersTurn = true;
     private boolean isPlayable = true;
 
@@ -69,7 +73,7 @@ public class Main extends Application {
         for (AttachPoint attachPoint : attachPointList) {
             for (BrickRectangle leftBrickRectangle : leftBrickRectangles) {
                 try {
-                    checkIsBrickPlacable(leftBrickRectangle, attachPoint);
+                    gameControl.checkIsBrickPlacable(leftBrickRectangle, attachPoint);
                     return;
                 } catch (Exception ignored) {
                 }
@@ -136,7 +140,7 @@ public class Main extends Application {
             gameFieldAndBricksChoiceStackPane.getChildren().add(singleBrickRectangle);
             gameFieldAndBricksChoiceStackPane.setAlignment(singleBrickRectangle, Pos.TOP_RIGHT);
             moveBrickRectangle(singleBrickRectangle, attachPoint);
-            updateAttachPointList(attachPoint, singleBrickRectangle);
+            gameControl.updateAttachPointList(attachPoint, singleBrickRectangle, attachPointList);
         }
     }
 
@@ -235,10 +239,10 @@ public class Main extends Application {
 
             try {
                 if (brickRectangle.isMovable() & isPlayersTurn) {
-                    AttachPoint attachPoint = checkIsBrickOnAttachPoint(brickRectangle);
-                    checkIsBrickPlacable(brickRectangle, attachPoint);
+                    AttachPoint attachPoint = gameControl.checkIsBrickOnAttachPoint(brickRectangle, attachPointList);
+                    gameControl.checkIsBrickPlacable(brickRectangle, attachPoint);
                     moveBrickRectangle(brickRectangle, attachPoint);
-                    updateAttachPointList(attachPoint, brickRectangle);
+                    gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
                     checkState();
                     if (!isPlayable){
                         finishGame();
@@ -257,7 +261,7 @@ public class Main extends Application {
     }
 
     private void finishGame() {
-        
+
     }
 
     private void moveBrickRectangle(BrickRectangle brickRectangle, AttachPoint attachPoint) {
@@ -273,78 +277,6 @@ public class Main extends Application {
         brickRectangle.setMovable(false);
     }
 
-    private void updateAttachPointList(AttachPoint busyAttachPoint, BrickRectangle brickRectangle) {
-
-        busyAttachPoint.setHorizontalBrickPlacable(false);
-        busyAttachPoint.setVerticalBrickPlacable(false);
-        attachPointList.set(attachPointList.indexOf(busyAttachPoint), busyAttachPoint);
-        AttachPoint neighbourBusyAttachPoint = new AttachPoint();
-
-        if (brickRectangle.getBrickType() != BrickType.SINGLE) {
-            neighbourBusyAttachPoint = new AttachPoint();
-
-            if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
-                neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 1);
-            } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
-                neighbourBusyAttachPoint = attachPointList.get(busyAttachPoint.getIndex() + 4);
-            }
-            neighbourBusyAttachPoint.setHorizontalBrickPlacable(false);
-            neighbourBusyAttachPoint.setVerticalBrickPlacable(false);
-            attachPointList.set(neighbourBusyAttachPoint.getIndex(), neighbourBusyAttachPoint);
-        }
-        updateSurroundingAttachPoints(busyAttachPoint
-                , neighbourBusyAttachPoint
-                , brickRectangle);
-
-
-    }
-
-    private void updateSurroundingAttachPoints(AttachPoint busyAttachPoint, AttachPoint neighbourBusyAttachPoint, BrickRectangle brickRectangle) {
-        List<Integer> firstColumnIndexes = Arrays.asList(0, 4, 8, 12);
-        if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
-                attachPoint.setVerticalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-
-                attachPoint = attachPointList.get(neighbourBusyAttachPoint.getIndex() - 4);
-                attachPoint.setVerticalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
-                attachPoint.setHorizontalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-        } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
-                attachPoint.setVerticalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
-                attachPoint.setHorizontalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-
-                attachPoint = attachPointList.get(neighbourBusyAttachPoint.getIndex() - 1);
-                attachPoint.setVerticalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-        } else if (brickRectangle.getBrickType() == BrickType.SINGLE) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
-                attachPoint.setVerticalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-            if (!firstColumnIndexes.contains(busyAttachPoint.getIndex())) {
-                AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 1);
-                attachPoint.setHorizontalBrickPlacable(false);
-                attachPointList.set(attachPoint.getIndex(), attachPoint);
-            }
-        }
-    }
-
 
     private void createListOfAttachPoints() {
 
@@ -358,42 +290,5 @@ public class Main extends Application {
                         , i != 3));
             }
         }
-    }
-
-    private AttachPoint checkIsBrickOnAttachPoint(BrickRectangle brickRectangle) throws Exception {
-
-        double recX;
-        if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
-            recX = brickRectangle.getTranslateX() - 100;
-        } else {
-            recX = brickRectangle.getTranslateX();
-        }
-        double recY = brickRectangle.getTranslateY();
-        double pointX, pointY;
-        boolean attachPointIsFound = false;
-        AttachPoint currentAttachPoint = new AttachPoint();
-
-        for (int i = 0; i < attachPointList.size(); i++) {
-            currentAttachPoint = attachPointList.get(i);
-            pointX = currentAttachPoint.getX();
-            pointY = currentAttachPoint.getY();
-            boolean rectangleInAttachArea = (recX - pointX) * (recX - pointX) + (recY - pointY) * (recY - pointY) < 50 * 50;
-            if (rectangleInAttachArea) {
-                attachPointIsFound = true;
-                break;
-            }
-        }
-        if (!attachPointIsFound) throw new Exception();
-        return currentAttachPoint;
-    }
-
-    private void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
-
-        boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
-                & attachPoint.isHorizontalBrickPlacable();
-        boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
-                & attachPoint.isVerticalBrickPlacable();
-        if (isHorizontalBrickPlacable | isVerticalBrickPlacable) return;
-        throw new Exception();
     }
 }

@@ -5,4 +5,6 @@ module com.example.bricksgame {
 
     opens com.example.bricksgame to javafx.fxml;
     exports com.example.bricksgame;
+    exports com.example.bricksgame.data;
+    opens com.example.bricksgame.data to javafx.fxml;
 }
