@@ -15,12 +15,6 @@ public class Utils {
         BrickType type1 = gameState1.getUsedBrickRectangle().getBrickType();
         BrickType type2 = gameState2.getUsedBrickRectangle().getBrickType();
 
-        /*for (int i = 0; i < 16; i++){
-            System.out.println(i + ": " + list1.get(i).isHorizontalBrickPlacable() + " " + list2.get(i).isHorizontalBrickPlacable());
-            System.out.println("   " + list1.get(i).isVerticalBrickPlacable() + " " + list2.get(i).isVerticalBrickPlacable());
-            System.out.println();
-        }*/
-
         boolean listsAreEqual = listsAreEqual(list1, list2);
         boolean typesAreEqual = type1 == type2;
 

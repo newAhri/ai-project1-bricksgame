@@ -19,6 +19,10 @@ public class Node {
         return gameState;
     }
 
+    public void setGameState(GameState gameState) {
+        this.gameState = gameState;
+    }
+
     public boolean isMaxPlayer() {
         return isMaxPlayer;
     }

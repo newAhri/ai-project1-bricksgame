@@ -30,7 +30,6 @@ public class Main extends Application {
     private boolean isPlayable = true;
     private MiniMax miniMax = new MiniMax();
     private Tree tree;
-    private GameState currentGameState;
     private Node currentNode;
 
 
@@ -54,38 +53,44 @@ public class Main extends Application {
         checkState();
         if (!isPlayable) {
             finishGame();
+            return;
         }
 
         if (!isPlayersTurn) {
 
             List<Node> childrenNodes = currentNode.getChildren();
+
             for (Node child : childrenNodes) {
                 if (child.getScore() == (currentNode.isMaxPlayer() ? -1 : 1)) {
                     currentNode = child;
-                    BrickType brickRectangleType = currentNode
-                            .getGameState()
-                            .getUsedBrickRectangle()
-                            .getBrickType();
-
-                    BrickRectangle brickRectangle = brickRectangleList.stream()
-                            .filter(brick -> brick.getBrickType() == brickRectangleType)
-                            .findFirst()
-                            .get();
-                    AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
-
-                    moveBrickRectangle(brickRectangle, attachPoint);
-
-                    attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
-                    brickRectangleList.remove(brickRectangle);
-
-                    resizeBrickRectangle(brickRectangle, ToSize.BIG);
-                    isPlayersTurn = true;
-                    break;
+                } else {
+                    currentNode = childrenNodes.get(0);
                 }
             }
+
+            BrickType brickRectangleType = currentNode
+                    .getGameState()
+                    .getUsedBrickRectangle()
+                    .getBrickType();
+
+            BrickRectangle brickRectangle = brickRectangleList.stream()
+                    .filter(brick -> brick.getBrickType() == brickRectangleType)
+                    .findFirst()
+                    .get();
+            AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
+
+            moveBrickRectangle(brickRectangle, attachPoint);
+
+            attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
+            brickRectangleList.remove(brickRectangle);
+
+            resizeBrickRectangle(brickRectangle, ToSize.BIG);
+            isPlayersTurn = true;
             checkState();
+
             if (!isPlayable) {
                 finishGame();
+                return;
             }
         }
 
@@ -274,11 +279,12 @@ public class Main extends Application {
                     brickRectangleList.remove(brickRectangle);
                     attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
 
-                    currentGameState = new GameState(attachPointList, brickRectangleList);
+                    GameState currentGameState = new GameState(attachPointList, brickRectangleList);
                     currentGameState.setUsedAttachPoint(attachPoint);
                     currentGameState.setUsedBrickRectangle(brickRectangle);
                     for (Node child : currentNode.getChildren()) {
                         if (Utils.gameStatesAreEqual(child.getGameState(), currentGameState)) {
+                            child.setGameState(currentGameState);
                             currentNode = child;
                             break;
                         }
@@ -308,6 +314,7 @@ public class Main extends Application {
 
     private void finishGame() {
         System.out.println("finish");
+
 
     }
 
