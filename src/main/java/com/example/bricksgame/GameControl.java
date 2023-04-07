@@ -2,7 +2,7 @@ package com.example.bricksgame;
 
 import com.example.bricksgame.data.AttachPoint;
 import com.example.bricksgame.data.BrickRectangle;
-import com.example.bricksgame.data.BrickType;
+import com.example.bricksgame.enums.BrickType;
 import com.example.bricksgame.data.GameState;
 
 import java.util.ArrayList;
@@ -150,7 +150,6 @@ public class GameControl {
             for (BrickRectangle brickRectangle : leftBrickRectangleList) {
                 try {
                     checkIsBrickPlacable(brickRectangle, attachPoint);
-
                     AttachPoint attachPointCopy = attachPoint.clone();
                     List<AttachPoint> attachPointListCopy = new ArrayList<>();
 

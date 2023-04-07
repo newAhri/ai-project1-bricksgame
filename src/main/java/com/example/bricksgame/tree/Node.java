@@ -1,4 +1,6 @@
-package com.example.bricksgame.data;
+package com.example.bricksgame.tree;
+
+import com.example.bricksgame.data.GameState;
 
 import java.util.ArrayList;
 import java.util.List;

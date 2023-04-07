@@ -1,5 +1,6 @@
 package com.example.bricksgame.data;
 
+import com.example.bricksgame.enums.BrickType;
 import javafx.scene.shape.Rectangle;
 
 public class BrickRectangle extends Rectangle implements Cloneable{

@@ -1,4 +1,4 @@
-package com.example.bricksgame.data;
+package com.example.bricksgame.tree;
 
 public class Tree {
     Node root;

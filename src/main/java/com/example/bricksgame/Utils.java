@@ -1,7 +1,7 @@
 package com.example.bricksgame;
 
 import com.example.bricksgame.data.AttachPoint;
-import com.example.bricksgame.data.BrickType;
+import com.example.bricksgame.enums.BrickType;
 import com.example.bricksgame.data.GameState;
 
 import java.util.List;

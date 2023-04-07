@@ -1,6 +1,10 @@
 package com.example.bricksgame;
 
 import com.example.bricksgame.data.*;
+import com.example.bricksgame.enums.BrickType;
+import com.example.bricksgame.enums.ToSize;
+import com.example.bricksgame.tree.Node;
+import com.example.bricksgame.tree.Tree;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -22,15 +26,14 @@ import java.util.stream.IntStream;
 
 public class Main extends Application {
 
+    private final GameControl gameControl = new GameControl();
+    private final MiniMax miniMax = new MiniMax();
     private List<AttachPoint> attachPointList;
     private List<BrickRectangle> brickRectangleList;
     private StackPane gameFieldAndBricksChoiceStackPane;
-    private GameControl gameControl = new GameControl();
+    private Node currentNode;
     private boolean isPlayersTurn = true;
     private boolean isPlayable = true;
-    private MiniMax miniMax = new MiniMax();
-    private Tree tree;
-    private Node currentNode;
 
 
     public static void main(String[] args) {
@@ -43,11 +46,11 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(createContent(), 1200, 420));
         primaryStage.show();
 
-        tree = miniMax.getTree(new GameState(new ArrayList<>(attachPointList), brickRectangleList));
+        Tree tree = miniMax.getTree(new GameState(new ArrayList<>(attachPointList), brickRectangleList));
         currentNode = tree.getRoot();
     }
 
-    private void playGame() {
+    private void computerMove() {
 
 
         checkState();
@@ -290,7 +293,7 @@ public class Main extends Application {
                         }
                     }
                     isPlayersTurn = false;
-                    playGame();
+                    computerMove();
 
                 }
 
@@ -330,7 +333,6 @@ public class Main extends Application {
         System.out.println(attachPoint.getY());
         brickRectangle.setMovable(false);
     }
-
 
     private void createListOfAttachPoints() {
 

@@ -1,6 +1,8 @@
 package com.example.bricksgame;
 
 import com.example.bricksgame.data.*;
+import com.example.bricksgame.tree.Node;
+import com.example.bricksgame.tree.Tree;
 
 import java.util.Comparator;
 import java.util.List;
@@ -10,7 +12,6 @@ public class MiniMax {
 
     private Tree tree;
     private GameControl gameControl = new GameControl();
-    private int i = 0;
 
 
     public void constructTree(GameState gameState) {
@@ -34,7 +35,6 @@ public class MiniMax {
             boolean isChildMaxPlayer = !parentNode.isMaxPlayer();
             gameStateList.forEach(gameState -> {
                 Node newChildNode = new Node(new GameState(gameState), isChildMaxPlayer);
-                System.out.println(i++);
                 parentNode.addChild(newChildNode);
                 constructTree(newChildNode);
             });
