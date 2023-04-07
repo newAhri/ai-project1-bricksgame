@@ -73,13 +73,14 @@ public class Main extends Application {
                             .get();
                     AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
 
-                    brickRectangle.setWidth(brickRectangle.getWidth() * 4);
-                    brickRectangle.setHeight(brickRectangle.getHeight() * 4);
-
                     moveBrickRectangle(brickRectangle, attachPoint);
-                    //resizeBrickRectangle(brickRectangle, ToSize.BIG);
+
                     attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
+                    brickRectangleList.remove(brickRectangle);
+
+                    resizeBrickRectangle(brickRectangle, ToSize.BIG);
                     isPlayersTurn = true;
+                    break;
                 }
             }
             checkState();
@@ -270,6 +271,7 @@ public class Main extends Application {
                     AttachPoint attachPoint = gameControl.checkIsBrickOnAttachPoint(brickRectangle, attachPointList);
                     gameControl.checkIsBrickPlacable(brickRectangle, attachPoint);
                     moveBrickRectangle(brickRectangle, attachPoint);
+                    brickRectangleList.remove(brickRectangle);
                     attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
 
                     currentGameState = new GameState(attachPointList, brickRectangleList);
