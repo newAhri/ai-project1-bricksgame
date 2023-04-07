@@ -8,41 +8,46 @@ import java.util.NoSuchElementException;
 
 public class MiniMax {
 
-    Tree tree;
-    GameControl gameControl = new GameControl();
+    private Tree tree;
+    private GameControl gameControl = new GameControl();
+    private int i = 0;
 
-    public void constructTree(List<AttachPoint> attachPointList, List<BrickRectangle> brickRectangleList){
+
+    public void constructTree(GameState gameState) {
 
         tree = new Tree();
-        Node root = new Node(attachPointList, brickRectangleList, true);
+        Node root = new Node
+                (new GameState(gameState.getAttachPointList(), gameState.getBrickRectangleList()), true);
         tree.setRoot(root);
         constructTree(root);
-        checkWin();
+        setChildNodeScores();
     }
 
     private void constructTree(Node parentNode) {
 
-        List <GameState> gameStateList = gameControl
-                .getListOfPossibleGameStates(parentNode.getAttachPointList(), parentNode.getBrickRectangleList());
-        boolean isChildMaxPlayer = !parentNode.isMaxPlayer();
-        gameStateList.forEach(g -> {
-            Node newChildNode = new Node(g.getAttachPointList(), g.getBrickRectangleList(),isChildMaxPlayer);
-            parentNode.addChild(newChildNode);
-            if (g.isMoreMovesLeft()){
+        GameState parentNodeGameState = parentNode.getGameState();
+        List<GameState> gameStateList = gameControl
+                .getListOfPossibleGameStates(parentNodeGameState);
+        if (gameStateList.isEmpty()) {
+            parentNode.setMoreMovesLeft(false);
+        } else {
+            boolean isChildMaxPlayer = !parentNode.isMaxPlayer();
+            gameStateList.forEach(gameState -> {
+                Node newChildNode = new Node(new GameState(gameState), isChildMaxPlayer);
+                System.out.println(i++);
+                parentNode.addChild(newChildNode);
                 constructTree(newChildNode);
-            } else {
-                newChildNode.setMoreMovesLeft(false);
-            }
-        });
+            });
+        }
     }
 
-    public void checkWin() {
+    public void setChildNodeScores() {
 
         Node root = tree.getRoot();
-        checkWin(root);
+        setChildNodeScores(root);
     }
 
-    private void checkWin(Node node) {
+    private void setChildNodeScores(Node node) {
 
         List<Node> children = node.getChildren();
         boolean isMaxPlayer = node.isMaxPlayer();
@@ -50,7 +55,7 @@ public class MiniMax {
             if (!child.isMoreMovesLeft()) {
                 child.setScore(isMaxPlayer ? 1 : -1);
             } else {
-                checkWin(child);
+                setChildNodeScores(child);
             }
         });
         Node bestChild = findBestChild(isMaxPlayer, children);
@@ -65,4 +70,8 @@ public class MiniMax {
                 .orElseThrow(NoSuchElementException::new);
     }
 
+    public Tree getTree(GameState gameState) {
+        constructTree(gameState);
+        return tree;
+    }
 }

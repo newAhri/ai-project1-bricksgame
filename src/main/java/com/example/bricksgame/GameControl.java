@@ -8,6 +8,7 @@ import com.example.bricksgame.data.GameState;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GameControl {
 
@@ -41,10 +42,10 @@ public class GameControl {
     public void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
 
         boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
-                & attachPoint.isHorizontalBrickPlacable();
+                && attachPoint.isHorizontalBrickPlacable();
         boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
-                & attachPoint.isVerticalBrickPlacable();
-        if (isHorizontalBrickPlacable | isVerticalBrickPlacable) return;
+                && attachPoint.isVerticalBrickPlacable();
+        if (isHorizontalBrickPlacable || isVerticalBrickPlacable) return;
         throw new Exception();
     }
 
@@ -54,7 +55,7 @@ public class GameControl {
 
         busyAttachPoint.setHorizontalBrickPlacable(false);
         busyAttachPoint.setVerticalBrickPlacable(false);
-        attachPointList.set(attachPointList.indexOf(busyAttachPoint), busyAttachPoint);
+        attachPointList.set(busyAttachPoint.getIndex(), busyAttachPoint);
         AttachPoint neighbourBusyAttachPoint = new AttachPoint();
 
         if (brickRectangle.getBrickType() != BrickType.SINGLE) {
@@ -84,7 +85,7 @@ public class GameControl {
             , List<AttachPoint> attachPointList) {
         List<Integer> firstColumnIndexes = Arrays.asList(0, 4, 8, 12);
         if (brickRectangle.getBrickType() == BrickType.HORIZONTAL) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+            if (busyAttachPoint.getIndex() >= 4) {
                 AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
                 attachPoint.setVerticalBrickPlacable(false);
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
@@ -99,7 +100,7 @@ public class GameControl {
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
             }
         } else if (brickRectangle.getBrickType() == BrickType.VERTICAL) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+            if (busyAttachPoint.getIndex() >= 4) {
                 AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
                 attachPoint.setVerticalBrickPlacable(false);
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
@@ -110,11 +111,11 @@ public class GameControl {
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
 
                 attachPoint = attachPointList.get(neighbourBusyAttachPoint.getIndex() - 1);
-                attachPoint.setVerticalBrickPlacable(false);
+                attachPoint.setHorizontalBrickPlacable(false);
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
             }
         } else if (brickRectangle.getBrickType() == BrickType.SINGLE) {
-            if (busyAttachPoint.getIndex() >= 4 & busyAttachPoint.getIndex() <= 7) {
+            if (busyAttachPoint.getIndex() >= 4) {
                 AttachPoint attachPoint = attachPointList.get(busyAttachPoint.getIndex() - 4);
                 attachPoint.setVerticalBrickPlacable(false);
                 attachPointList.set(attachPoint.getIndex(), attachPoint);
@@ -128,19 +129,62 @@ public class GameControl {
         return attachPointList;
     }
 
-    public List<GameState> getListOfPossibleGameStates(List<AttachPoint> attachPointList, List<BrickRectangle> brickRectangleList) {
+    public List<GameState> getListOfPossibleGameStates(GameState gameState) {
 
         List<GameState> gameStateList = new ArrayList<>();
-        for (AttachPoint attachPoint:attachPointList){
-            for (BrickRectangle brickRectangle:brickRectangleList){
-                try{
+        List<AttachPoint> attachPointList = gameState.getAttachPointList();
+        List<BrickRectangle> brickRectangleList = gameState.getBrickRectangleList();
+        List<AttachPoint> possibleAttachPointList;
+        List<BrickRectangle> possibleBrickRectangleList;
+
+        List<BrickRectangle> leftBrickRectangleList = brickRectangleList
+                .stream()
+                .map(BrickRectangle::getBrickType)
+                .distinct()
+                .map(BrickRectangle::new)
+                .collect(Collectors.toList());
+
+        if (leftBrickRectangleList.isEmpty()) return gameStateList;
+
+        for (AttachPoint attachPoint : attachPointList) {
+            for (BrickRectangle brickRectangle : leftBrickRectangleList) {
+                try {
                     checkIsBrickPlacable(brickRectangle, attachPoint);
-                    List<AttachPoint> possibleAttachPointList = updateAttachPointList(attachPoint, brickRectangle, attachPointList);
-                    List<BrickRectangle> possibleBrickRectangleList = brickRectangleList;
-                    possibleBrickRectangleList.remove(brickRectangle);
-                    gameStateList.add(new GameState(possibleAttachPointList, possibleBrickRectangleList));
-                } catch (Exception ex) {
-                    gameStateList.add(new GameState(false));
+
+                    AttachPoint attachPointCopy = attachPoint.clone();
+                    List<AttachPoint> attachPointListCopy = new ArrayList<>();
+
+                    for (AttachPoint point:attachPointList){
+                        attachPointListCopy.add(point.clone());
+                    }
+
+                    attachPointListCopy = updateAttachPointList(attachPointCopy, brickRectangle, attachPointListCopy);
+
+                    possibleAttachPointList = new ArrayList<>();
+
+                    for (AttachPoint point:attachPointListCopy){
+                        possibleAttachPointList.add(point.clone());
+                    }
+
+                    possibleBrickRectangleList = new ArrayList<>();
+
+                    for (BrickRectangle brick:brickRectangleList){
+                        possibleBrickRectangleList.add(brick.clone());
+                    }
+
+                    List<BrickRectangle> finalPossibleBrickRectangleList = possibleBrickRectangleList;
+
+                    possibleBrickRectangleList.stream()
+                            .filter(brick -> brick.getBrickType() == brickRectangle.getBrickType())
+                            .findFirst()
+                            .ifPresent(finalPossibleBrickRectangleList::remove);
+
+                    GameState possibleGameState = new GameState(possibleAttachPointList, possibleBrickRectangleList);
+                    possibleGameState.setUsedBrickRectangle(brickRectangle);
+                    possibleGameState.setUsedAttachPoint(attachPoint);
+
+                    gameStateList.add(possibleGameState);
+                } catch (Exception ignored) {
                 }
             }
         }

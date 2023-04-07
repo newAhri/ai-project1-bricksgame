@@ -1,6 +1,6 @@
 package com.example.bricksgame.data;
 
-public class AttachPoint {
+public class AttachPoint implements Cloneable {
 
     private int index;
     private double X;
@@ -23,24 +23,12 @@ public class AttachPoint {
         return index;
     }
 
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
     public double getX() {
         return X;
     }
 
-    public void setX(double x) {
-        X = x;
-    }
-
     public double getY() {
         return Y;
-    }
-
-    public void setY(double y) {
-        Y = y;
     }
 
     public boolean isHorizontalBrickPlacable() {
@@ -57,5 +45,14 @@ public class AttachPoint {
 
     public void setVerticalBrickPlacable(boolean verticalBrickPlacable) {
         this.verticalBrickPlacable = verticalBrickPlacable;
+    }
+
+    @Override
+    public AttachPoint clone(){
+        try{
+            return (AttachPoint) super.clone();
+        } catch (CloneNotSupportedException ex){
+            throw new AssertionError();
+        }
     }
 }

@@ -4,41 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
-    private List<AttachPoint> attachPointList;
-    private List<BrickRectangle> brickRectangleList;
+    private GameState gameState;
     private boolean isMaxPlayer;
     private int score;
     private List<Node> children;
     private boolean moreMovesLeft = true;
 
-    public Node(List<AttachPoint> attachPointList, List<BrickRectangle> brickRectangleList, boolean isMaxPlayer) {
-        this.attachPointList = attachPointList;
-        this.brickRectangleList = brickRectangleList;
+    public Node(GameState gameState, boolean isMaxPlayer) {
+        this.gameState = gameState;
         this.isMaxPlayer = isMaxPlayer;
     }
 
-    public List<BrickRectangle> getBrickRectangleList() {
-        return brickRectangleList;
-    }
-
-    public void setBrickRectangleList(List<BrickRectangle> brickRectangleList) {
-        this.brickRectangleList = brickRectangleList;
-    }
-
-    public List<AttachPoint> getAttachPointList() {
-        return attachPointList;
-    }
-
-    public void setAttachPointList(List<AttachPoint> attachPointList) {
-        this.attachPointList = attachPointList;
+    public GameState getGameState() {
+        return gameState;
     }
 
     public boolean isMaxPlayer() {
         return isMaxPlayer;
-    }
-
-    public void setMaxPlayer(boolean maxPlayer) {
-        isMaxPlayer = maxPlayer;
     }
 
     public int getScore() {
@@ -51,10 +33,6 @@ public class Node {
 
     public List<Node> getChildren() {
         return children;
-    }
-
-    public void setChildren(List<Node> children) {
-        this.children = children;
     }
 
     public boolean isMoreMovesLeft() {

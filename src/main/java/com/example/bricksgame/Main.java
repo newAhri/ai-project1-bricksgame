@@ -1,8 +1,6 @@
 package com.example.bricksgame;
 
-import com.example.bricksgame.data.AttachPoint;
-import com.example.bricksgame.data.BrickRectangle;
-import com.example.bricksgame.data.BrickType;
+import com.example.bricksgame.data.*;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -30,6 +28,10 @@ public class Main extends Application {
     private GameControl gameControl = new GameControl();
     private boolean isPlayersTurn = true;
     private boolean isPlayable = true;
+    private MiniMax miniMax = new MiniMax();
+    private Tree tree;
+    private GameState currentGameState;
+    private Node currentNode;
 
 
     public static void main(String[] args) {
@@ -41,12 +43,50 @@ public class Main extends Application {
         createListOfAttachPoints();
         primaryStage.setScene(new Scene(createContent(), 1200, 420));
         primaryStage.show();
-        playGame();
+
+        tree = miniMax.getTree(new GameState(new ArrayList<>(attachPointList), brickRectangleList));
+        currentNode = tree.getRoot();
     }
 
     private void playGame() {
 
+
         checkState();
+        if (!isPlayable) {
+            finishGame();
+        }
+
+        if (!isPlayersTurn) {
+
+            List<Node> childrenNodes = currentNode.getChildren();
+            for (Node child : childrenNodes) {
+                if (child.getScore() == (currentNode.isMaxPlayer() ? -1 : 1)) {
+                    currentNode = child;
+                    BrickType brickRectangleType = currentNode
+                            .getGameState()
+                            .getUsedBrickRectangle()
+                            .getBrickType();
+
+                    BrickRectangle brickRectangle = brickRectangleList.stream()
+                            .filter(brick -> brick.getBrickType() == brickRectangleType)
+                            .findFirst()
+                            .get();
+                    AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
+
+                    brickRectangle.setWidth(brickRectangle.getWidth() * 4);
+                    brickRectangle.setHeight(brickRectangle.getHeight() * 4);
+
+                    moveBrickRectangle(brickRectangle, attachPoint);
+                    //resizeBrickRectangle(brickRectangle, ToSize.BIG);
+                    attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
+                    isPlayersTurn = true;
+                }
+            }
+            checkState();
+            if (!isPlayable) {
+                finishGame();
+            }
+        }
 
     }
 
@@ -57,29 +97,9 @@ public class Main extends Application {
                 .map(BrickRectangle::getBrickType)
                 .distinct()
                 .collect(Collectors.toList());
-        if (leftBrickTypeList.isEmpty()) {
+        if (leftBrickTypeList.isEmpty() || !currentNode.isMoreMovesLeft()) {
             isPlayable = false;
-        } else {
-            checkForPossibleMove(leftBrickTypeList);
         }
-    }
-
-    private void checkForPossibleMove(List<BrickType> leftBrickTypes) {
-
-        List<BrickRectangle> leftBrickRectangles = leftBrickTypes
-                .stream()
-                .map(BrickRectangle::new)
-                .collect(Collectors.toList());
-        for (AttachPoint attachPoint : attachPointList) {
-            for (BrickRectangle leftBrickRectangle : leftBrickRectangles) {
-                try {
-                    gameControl.checkIsBrickPlacable(leftBrickRectangle, attachPoint);
-                    return;
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        isPlayable = false;
     }
 
     private Parent createContent() {
@@ -91,13 +111,16 @@ public class Main extends Application {
         createStackPaneGameFieldAndBricksChoiceRectangle();
         hBox.getChildren().addAll(gameFieldAndBricksChoiceStackPane);
 
+        brickRectangleList = getBrickRectangleList();
+        placeBricksInChoiceRectangle();
+        placeInitialSingleBrickRectanglesInGameField();
+
         return hBox;
     }
 
     private void createStackPaneGameFieldAndBricksChoiceRectangle() {
 
         gameFieldAndBricksChoiceStackPane = new StackPane();
-
         gameFieldAndBricksChoiceStackPane.setPrefSize(700, 500);
 
         Path gameFieldPath = createGameFieldPath();
@@ -118,9 +141,7 @@ public class Main extends Application {
 
         list.addAll(gameFieldRectangle, gameFieldPath, bricksChoiceRectangle);
 
-        brickRectangleList = getBrickRectangleList();
-        placeBricksInChoiceRectangle();
-        placeInitialSingleBrickRectanglesInGameField();
+
     }
 
     private void placeInitialSingleBrickRectanglesInGameField() {
@@ -140,26 +161,34 @@ public class Main extends Application {
             gameFieldAndBricksChoiceStackPane.getChildren().add(singleBrickRectangle);
             gameFieldAndBricksChoiceStackPane.setAlignment(singleBrickRectangle, Pos.TOP_RIGHT);
             moveBrickRectangle(singleBrickRectangle, attachPoint);
-            gameControl.updateAttachPointList(attachPoint, singleBrickRectangle, attachPointList);
+            attachPointList = gameControl.updateAttachPointList(attachPoint, singleBrickRectangle, attachPointList);
+            System.out.println();
         }
     }
 
     private void placeBricksInChoiceRectangle() {
 
         ObservableList list = gameFieldAndBricksChoiceStackPane.getChildren();
-        for (int i = 0; i < brickRectangleList.size() / 3; i++) {
+
+
+        int index = 0;
+        for (int i = 0; i < brickRectangleList.size() / 3 + 1; i++) {
             for (int j = 0; j < 3; j++) {
-                BrickRectangle brickRectangle = brickRectangleList.get(i * 3 + j);
+                if (index < brickRectangleList.size()) {
+                    BrickRectangle brickRectangle = brickRectangleList.get(i * 3 + j);
+                    list.add(brickRectangle);
+                    gameFieldAndBricksChoiceStackPane.setAlignment(brickRectangle, Pos.TOP_RIGHT);
 
-                list.add(brickRectangle);
-                gameFieldAndBricksChoiceStackPane.setAlignment(brickRectangle, Pos.TOP_RIGHT);
+                    brickRectangle.setTranslateX(j * 60 - 150);
+                    brickRectangle.setTranslateY(i * 60 + 40);
 
-                brickRectangle.setWidth(brickRectangle.getWidth() / 4);
-                brickRectangle.setHeight(brickRectangle.getHeight() / 4);
+                    makeDraggable(brickRectangle);
+                    resizeBrickRectangle(brickRectangle, ToSize.SMALL);
+                    index++;
+                } else {
+                    break;
+                }
 
-                brickRectangle.setTranslateX(j * 60 - 150);
-                brickRectangle.setTranslateY(i * 60 + 40);
-                makeDraggable(brickRectangle);
             }
         }
     }
@@ -212,8 +241,7 @@ public class Main extends Application {
         brickRectangle.setOnMousePressed(e -> {
 
             if (brickRectangle.isMovable() & isPlayersTurn) {
-                brickRectangle.setWidth(brickRectangle.getWidth() * 4);
-                brickRectangle.setHeight(brickRectangle.getHeight() * 4);
+                resizeBrickRectangle(brickRectangle, ToSize.BIG);
 
                 orgSceneX = e.getSceneX();
                 orgSceneY = e.getSceneY();
@@ -242,25 +270,42 @@ public class Main extends Application {
                     AttachPoint attachPoint = gameControl.checkIsBrickOnAttachPoint(brickRectangle, attachPointList);
                     gameControl.checkIsBrickPlacable(brickRectangle, attachPoint);
                     moveBrickRectangle(brickRectangle, attachPoint);
-                    gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
-                    checkState();
-                    if (!isPlayable){
-                        finishGame();
+                    attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
+
+                    currentGameState = new GameState(attachPointList, brickRectangleList);
+                    currentGameState.setUsedAttachPoint(attachPoint);
+                    currentGameState.setUsedBrickRectangle(brickRectangle);
+                    for (Node child : currentNode.getChildren()) {
+                        if (Utils.gameStatesAreEqual(child.getGameState(), currentGameState)) {
+                            currentNode = child;
+                            break;
+                        }
                     }
                     isPlayersTurn = false;
+                    playGame();
 
                 }
 
             } catch (Exception ex) {
                 brickRectangle.setTranslateX(orgTranslateX);
                 brickRectangle.setTranslateY(orgTranslateY);
-                brickRectangle.setWidth(brickRectangle.getWidth() / 4);
-                brickRectangle.setHeight(brickRectangle.getHeight() / 4);
+                resizeBrickRectangle(brickRectangle, ToSize.SMALL);
             }
         });
     }
 
+    private void resizeBrickRectangle(BrickRectangle brickRectangle, ToSize toSize) {
+        if (toSize == ToSize.BIG) {
+            brickRectangle.setWidth(brickRectangle.getWidth() * 4);
+            brickRectangle.setHeight(brickRectangle.getHeight() * 4);
+        } else {
+            brickRectangle.setWidth(brickRectangle.getWidth() / 4);
+            brickRectangle.setHeight(brickRectangle.getHeight() / 4);
+        }
+    }
+
     private void finishGame() {
+        System.out.println("finish");
 
     }
 

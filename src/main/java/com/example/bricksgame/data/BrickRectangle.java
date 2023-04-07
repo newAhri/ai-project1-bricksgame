@@ -2,7 +2,7 @@ package com.example.bricksgame.data;
 
 import javafx.scene.shape.Rectangle;
 
-public class BrickRectangle extends Rectangle{
+public class BrickRectangle extends Rectangle implements Cloneable{
     private BrickType brickType;
     private boolean isMovable = true;
 
@@ -35,5 +35,15 @@ public class BrickRectangle extends Rectangle{
 
     public void setMovable(boolean movable) {
         isMovable = movable;
+    }
+
+    @Override
+    public BrickRectangle clone() {
+        try{
+            return (BrickRectangle)super.clone();
+        } catch (CloneNotSupportedException ex){
+            throw new AssertionError();
+        }
+
     }
 }
