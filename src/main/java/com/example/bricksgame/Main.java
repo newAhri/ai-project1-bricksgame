@@ -11,13 +11,20 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
+import javafx.scene.control.Button;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.util.*;
@@ -34,24 +41,153 @@ public class Main extends Application {
     private Node currentNode;
     private boolean isPlayersTurn = true;
     private boolean isPlayable = true;
-
+    private Stage primaryStage;
+    private HBox hBox;
+    private VBox statsVBox;
+    Random random = new Random();
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    public void start(Stage primaryStage) {
+    public void start(Stage stage) {
 
-        createListOfAttachPoints();
-        primaryStage.setScene(new Scene(createContent(), 1200, 420));
+        primaryStage = stage;
+        primaryStage.setResizable(false);
+        primaryStage.setScene(new Scene(createStartMenu(), 420, 420));
         primaryStage.show();
+
+    }
+
+    public void startGame() {
+        primaryStage.close();
+        primaryStage.setScene(new Scene(createContent(), 1200, 420));
+        primaryStage.centerOnScreen();
 
         Tree tree = miniMax.getTree(new GameState(new ArrayList<>(attachPointList), brickRectangleList));
         currentNode = tree.getRoot();
+        primaryStage.show();
+        if (!isPlayersTurn) {
+            computerMove();
+        }
+    }
+
+    private Parent createStartMenu() {
+
+        VBox vBox = new VBox();
+        vBox.setStyle("-fx-background-color: rgb(0, 185, 185)");
+        vBox.setSpacing(10);
+        vBox.setAlignment(Pos.CENTER);
+
+        Image image = new Image(getClass().getResourceAsStream("/pictures/bricksTitle.png"));
+        ImageView title = new ImageView(image);
+
+        vBox.getChildren().addAll(title);
+        vBox = (VBox) populatePaneWithStartSettings(vBox);
+
+        return vBox;
+    }
+
+    private Pane populatePaneWithStartSettings(Pane pane) {
+
+        Text choiceText = new Text("First starts:");
+        choiceText.setFont(Font.font("monospace", FontWeight.BOLD, 20));
+
+        ToggleGroup choiceGroup = new ToggleGroup();
+        RadioButton playerRadio = new RadioButton("Player");
+        playerRadio.setToggleGroup(choiceGroup);
+        RadioButton computerRadio = new RadioButton("Computer");
+        computerRadio.setToggleGroup(choiceGroup);
+
+        Button playButton = new Button("Start");
+        playButton.setOnAction(e -> {
+            if (computerRadio.isSelected()) {
+                isPlayersTurn = false;
+            } else if (playerRadio.isSelected()) {
+                isPlayersTurn = true;
+            }
+            isPlayable = true;
+            startGame();
+        });
+        playButton.setMaxSize(100, 200);
+
+        pane.getChildren().addAll(choiceText, playerRadio, computerRadio, playButton);
+        return pane;
+    }
+
+    private Parent createContent() {
+
+        hBox = new HBox();
+        hBox.setSpacing(10);
+        Image image = new Image(getClass().getResourceAsStream("/pictures/brickWall.png"));
+
+        BackgroundImage bImg = new BackgroundImage(image,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.DEFAULT,
+                BackgroundSize.DEFAULT);
+
+        Background bGround = new Background(bImg);
+        hBox.setBackground(bGround);
+
+        createStackPaneGameFieldAndBricksChoiceRectangle();
+        hBox.getChildren().addAll(gameFieldAndBricksChoiceStackPane);
+
+        brickRectangleList = getBrickRectangleList();
+
+        createListOfAttachPoints();
+        placeBricksInChoiceRectangle();
+        placeInitialSingleBrickRectanglesInGameField();
+        placeStatsPane();
+
+        return hBox;
+    }
+
+    private void placeStatsPane() {
+        statsVBox = new VBox();
+        statsVBox.setAlignment(Pos.CENTER);
+        statsVBox.setSpacing(10);
+        statsVBox.setPadding(new Insets(150, 150, 100, 150));
+        hBox.getChildren().addAll(statsVBox);
+    }
+
+    private void finishGame() {
+
+        setWinTextOnFinish();
+
+        Text replayText = new Text("Replay");
+        replayText.setFont(Font.font("monospace", FontWeight.BOLD, 25));
+        statsVBox.getChildren().addAll(replayText);
+        statsVBox = (VBox) populatePaneWithStartSettings(statsVBox);
+        statsVBox.setAlignment(Pos.CENTER);
+        statsVBox.setSpacing(10);
+        statsVBox.setPadding(new Insets(150, 140, 90, 150));
+
+    }
+
+    private void setWinTextOnFinish() {
+
+        Text youWinText = new Text("YOU WIN!");
+        youWinText.setFont(Font.font("monospace", FontWeight.BOLD, 30));
+        youWinText.setFill(Color.rgb(36, 78, 146));
+
+        Text youLoseText = new Text("you lose...");
+        youLoseText.setFont(Font.font("monospace", FontWeight.BOLD, 30));
+        youLoseText.setFill(Color.rgb(146, 36, 36));
+
+        ObservableList list = statsVBox.getChildren();
+
+
+        if (isPlayersTurn) {
+            list.add(youLoseText);
+        } else {
+            list.add(youWinText);
+        }
+
+
     }
 
     private void computerMove() {
-
 
         checkState();
         if (!isPlayable) {
@@ -59,43 +195,50 @@ public class Main extends Application {
             return;
         }
 
-        if (!isPlayersTurn) {
+        List<Node> childrenNodes = currentNode.getChildren();
+        List<Node> possibleChildrenNodes = new ArrayList<>();
 
-            List<Node> childrenNodes = currentNode.getChildren();
-
-            for (Node child : childrenNodes) {
-                if (child.getScore() == (currentNode.isMaxPlayer() ? -1 : 1)) {
-                    currentNode = child;
-                } else {
-                    currentNode = childrenNodes.get(0);
-                }
-            }
-
-            BrickType brickRectangleType = currentNode
-                    .getGameState()
-                    .getUsedBrickRectangle()
-                    .getBrickType();
-
-            BrickRectangle brickRectangle = brickRectangleList.stream()
-                    .filter(brick -> brick.getBrickType() == brickRectangleType)
-                    .findFirst()
-                    .get();
-            AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
-
-            moveBrickRectangle(brickRectangle, attachPoint);
-
-            attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
-            brickRectangleList.remove(brickRectangle);
-
-            resizeBrickRectangle(brickRectangle, ToSize.BIG);
-            isPlayersTurn = true;
-            checkState();
-
-            if (!isPlayable) {
-                finishGame();
-                return;
+        for (Node child : childrenNodes) {
+            if (child.getScore() == (currentNode.isMaxPlayer() ? -1 : 1)) {
+                possibleChildrenNodes.add(child);
             }
         }
+        if (!possibleChildrenNodes.isEmpty()) {
+            random = new Random();
+            int index = random.nextInt(possibleChildrenNodes.size());
+            currentNode = possibleChildrenNodes.get(index);
+        } else {
+            currentNode = childrenNodes.stream()
+                    .filter(node -> (currentNode.isMaxPlayer() ? 1 : -1) == node.getScore())
+                    .findFirst()
+                    .get();
+        }
+
+        BrickType brickRectangleType = currentNode
+                .getGameState()
+                .getUsedBrickRectangle()
+                .getBrickType();
+
+        BrickRectangle brickRectangle = brickRectangleList.stream()
+                .filter(brick -> brick.getBrickType() == brickRectangleType)
+                .findFirst()
+                .get();
+        AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
+
+        moveBrickRectangle(brickRectangle, attachPoint);
+
+        attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
+        brickRectangleList.remove(brickRectangle);
+
+        resizeBrickRectangle(brickRectangle, ToSize.BIG);
+        isPlayersTurn = true;
+        checkState();
+
+        if (!isPlayable) {
+            finishGame();
+            return;
+        }
+
 
     }
 
@@ -111,22 +254,6 @@ public class Main extends Application {
         }
     }
 
-    private Parent createContent() {
-
-        HBox hBox = new HBox();
-        hBox.setStyle("-fx-background-color: rgb(249,166,72)");
-        hBox.setSpacing(10);
-
-        createStackPaneGameFieldAndBricksChoiceRectangle();
-        hBox.getChildren().addAll(gameFieldAndBricksChoiceStackPane);
-
-        brickRectangleList = getBrickRectangleList();
-        placeBricksInChoiceRectangle();
-        placeInitialSingleBrickRectanglesInGameField();
-
-        return hBox;
-    }
-
     private void createStackPaneGameFieldAndBricksChoiceRectangle() {
 
         gameFieldAndBricksChoiceStackPane = new StackPane();
@@ -138,6 +265,7 @@ public class Main extends Application {
         Rectangle bricksChoiceRectangle = new Rectangle(10, 10, 200, 400);
         gameFieldRectangle.setFill(Color.WHITE);
         bricksChoiceRectangle.setFill(Color.WHITE);
+        bricksChoiceRectangle.setStroke(Color.BLACK);
 
         gameFieldAndBricksChoiceStackPane.setMargin(gameFieldRectangle, new Insets(10, 10, 10, 10));
         gameFieldAndBricksChoiceStackPane.setAlignment(gameFieldRectangle, Pos.CENTER_LEFT);
@@ -155,8 +283,8 @@ public class Main extends Application {
 
     private void placeInitialSingleBrickRectanglesInGameField() {
 
-        Random random = new Random();
-        int singleBricksAmount = 3;
+        random = new Random();
+        int singleBricksAmount = 2;
         List<Integer> indexList = new ArrayList<>(singleBricksAmount);
         IntStream.generate(() -> random.nextInt(16))
                 .distinct()
@@ -223,10 +351,10 @@ public class Main extends Application {
     public List<BrickRectangle> getBrickRectangleList() {
 
         List<BrickRectangle> brickRectangleList = new ArrayList<>();
-        Random random = new Random();
+        random = new Random();
         int sumArea = 0;
         int type;
-        while (sumArea <= 13) {
+        while (sumArea < 14) {
             type = random.nextInt(2) + 1;
             switch (type) {
                 case 1:
@@ -243,6 +371,7 @@ public class Main extends Application {
     }
 
     double orgSceneX, orgSceneY;
+
     double orgTranslateX, orgTranslateY;
 
     private void makeDraggable(BrickRectangle brickRectangle) {
@@ -313,12 +442,6 @@ public class Main extends Application {
             brickRectangle.setWidth(brickRectangle.getWidth() / 4);
             brickRectangle.setHeight(brickRectangle.getHeight() / 4);
         }
-    }
-
-    private void finishGame() {
-        System.out.println("finish");
-
-
     }
 
     private void moveBrickRectangle(BrickRectangle brickRectangle, AttachPoint attachPoint) {

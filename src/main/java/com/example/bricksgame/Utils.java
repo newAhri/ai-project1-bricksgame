@@ -18,7 +18,7 @@ public class Utils {
         boolean listsAreEqual = listsAreEqual(list1, list2);
         boolean typesAreEqual = type1 == type2;
 
-        if (listsAreEqual && typesAreEqual){
+        if (typesAreEqual && listsAreEqual){
             return true;
         }
         return false;
