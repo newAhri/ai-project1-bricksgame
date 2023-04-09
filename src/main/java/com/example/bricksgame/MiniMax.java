@@ -1,12 +1,10 @@
 package com.example.bricksgame;
 
-import com.example.bricksgame.data.*;
+import com.example.bricksgame.data.GameState;
 import com.example.bricksgame.tree.Node;
 import com.example.bricksgame.tree.Tree;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 public class MiniMax {
 
@@ -58,17 +56,8 @@ public class MiniMax {
                 setChildNodeScores(child);
             }
         });
-        //Node bestChild = findBestChild(isMaxPlayer, children);
         int sumOfChildrenScores = getSumOfChildrenScores(children);
         node.setScore(sumOfChildrenScores);
-    }
-
-    private Node findBestChild(boolean isMaxPlayer, List<Node> children) {
-
-        Comparator<Node> byScoreComparator = Comparator.comparing(Node::getScore);
-        return children.stream()
-                .max(isMaxPlayer ? byScoreComparator : byScoreComparator.reversed())
-                .orElseThrow(NoSuchElementException::new);
     }
 
     public Tree getTree(GameState gameState) {
