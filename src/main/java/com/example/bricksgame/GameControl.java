@@ -41,11 +41,13 @@ public class GameControl {
 
     public void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
 
+        boolean isSingleBrickPlacable = brickRectangle.getBrickType() == BrickType.SINGLE
+                && attachPoint.isHorizontalBrickPlacable();
         boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
                 && attachPoint.isHorizontalBrickPlacable();
         boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
                 && attachPoint.isVerticalBrickPlacable();
-        if (isHorizontalBrickPlacable || isVerticalBrickPlacable) return;
+        if (isHorizontalBrickPlacable || isVerticalBrickPlacable || isSingleBrickPlacable) return;
         throw new Exception();
     }
 
@@ -134,15 +136,11 @@ public class GameControl {
         List<GameState> gameStateList = new ArrayList<>();
         List<AttachPoint> attachPointList = gameState.getAttachPointList();
         List<BrickRectangle> brickRectangleList = gameState.getBrickRectangleList();
+
         List<AttachPoint> possibleAttachPointList;
         List<BrickRectangle> possibleBrickRectangleList;
 
-        List<BrickRectangle> leftBrickRectangleList = brickRectangleList
-                .stream()
-                .map(BrickRectangle::getBrickType)
-                .distinct()
-                .map(BrickRectangle::new)
-                .collect(Collectors.toList());
+        List<BrickRectangle> leftBrickRectangleList = getListOfLeftBrickRectangles(brickRectangleList);
 
         if (leftBrickRectangleList.isEmpty()) return gameStateList;
 
@@ -150,33 +148,13 @@ public class GameControl {
             for (BrickRectangle brickRectangle : leftBrickRectangleList) {
                 try {
                     checkIsBrickPlacable(brickRectangle, attachPoint);
+
                     AttachPoint attachPointCopy = attachPoint.clone();
-                    List<AttachPoint> attachPointListCopy = new ArrayList<>();
+                    possibleAttachPointList = getDeepCopyOfAttachPointList(attachPointList);
+                    possibleAttachPointList = updateAttachPointList(attachPointCopy, brickRectangle, possibleAttachPointList);
 
-                    for (AttachPoint point:attachPointList){
-                        attachPointListCopy.add(point.clone());
-                    }
-
-                    attachPointListCopy = updateAttachPointList(attachPointCopy, brickRectangle, attachPointListCopy);
-
-                    possibleAttachPointList = new ArrayList<>();
-
-                    for (AttachPoint point:attachPointListCopy){
-                        possibleAttachPointList.add(point.clone());
-                    }
-
-                    possibleBrickRectangleList = new ArrayList<>();
-
-                    for (BrickRectangle brick:brickRectangleList){
-                        possibleBrickRectangleList.add(brick.clone());
-                    }
-
-                    List<BrickRectangle> finalPossibleBrickRectangleList = possibleBrickRectangleList;
-
-                    possibleBrickRectangleList.stream()
-                            .filter(brick -> brick.getBrickType() == brickRectangle.getBrickType())
-                            .findFirst()
-                            .ifPresent(finalPossibleBrickRectangleList::remove);
+                    possibleBrickRectangleList = getDeepCopyOfBrickRectangleList(brickRectangleList);
+                    possibleBrickRectangleList = removeUsedBrickFromBrickRectangleList(possibleBrickRectangleList, brickRectangle);
 
                     GameState possibleGameState = new GameState(possibleAttachPointList, possibleBrickRectangleList);
                     possibleGameState.setUsedBrickRectangle(brickRectangle);
@@ -188,5 +166,43 @@ public class GameControl {
             }
         }
         return gameStateList;
+    }
+
+    private List<BrickRectangle> removeUsedBrickFromBrickRectangleList(List<BrickRectangle> brickRectangleList, BrickRectangle brick){
+
+        brickRectangleList.stream()
+                .filter(b -> b.getBrickType() == brick.getBrickType())
+                .findFirst()
+                .ifPresent(brickRectangleList::remove);
+
+        return brickRectangleList;
+    }
+
+    private List<AttachPoint> getDeepCopyOfAttachPointList(List<AttachPoint> originalList){
+        List<AttachPoint> copyList = new ArrayList<>();
+
+        for (AttachPoint point : originalList) {
+            copyList.add(point.clone());
+        }
+        return copyList;
+    }
+
+    private List<BrickRectangle> getDeepCopyOfBrickRectangleList(List<BrickRectangle> originalList){
+        List<BrickRectangle> copyList = new ArrayList<>();
+
+        for (BrickRectangle brick : originalList) {
+            copyList.add(brick.clone());
+        }
+        return copyList;
+    }
+
+    private List<BrickRectangle> getListOfLeftBrickRectangles(List<BrickRectangle> brickRectangleList) {
+
+        return brickRectangleList
+                .stream()
+                .map(BrickRectangle::getBrickType)
+                .distinct()
+                .map(BrickRectangle::new)
+                .collect(Collectors.toList());
     }
 }

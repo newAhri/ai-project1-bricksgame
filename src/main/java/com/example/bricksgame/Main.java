@@ -270,8 +270,8 @@ public class Main extends Application {
         List<BrickRectangle> brickRectangleList = new ArrayList<>();
         int sumArea = 0;
         int type;
-        //brickRectangleList.add(new BrickRectangle(BrickType.SINGLE));
-        while (sumArea < 14) {
+        brickRectangleList.add(new BrickRectangle(BrickType.SINGLE));
+        while (sumArea < 13) {
             type = random.nextInt(2) + 1;
             switch (type) {
                 case 1:
