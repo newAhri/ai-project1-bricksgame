@@ -41,13 +41,11 @@ public class GameControl {
 
     public void checkIsBrickPlacable(BrickRectangle brickRectangle, AttachPoint attachPoint) throws Exception {
 
-        boolean isSingleBrickPlacable = brickRectangle.getBrickType() == BrickType.SINGLE
-                && attachPoint.isHorizontalBrickPlacable();
         boolean isHorizontalBrickPlacable = brickRectangle.getBrickType() == BrickType.HORIZONTAL
                 && attachPoint.isHorizontalBrickPlacable();
         boolean isVerticalBrickPlacable = brickRectangle.getBrickType() == BrickType.VERTICAL
                 && attachPoint.isVerticalBrickPlacable();
-        if (isHorizontalBrickPlacable || isVerticalBrickPlacable || isSingleBrickPlacable) return;
+        if (isHorizontalBrickPlacable || isVerticalBrickPlacable) return;
         throw new Exception();
     }
 

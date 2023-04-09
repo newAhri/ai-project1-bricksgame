@@ -223,11 +223,7 @@ public class Main extends Application {
     private void placeInitialSingleBrickRectanglesInGameField() {
 
         int singleBricksAmount = 2;
-        List<Integer> indexList = new ArrayList<>(singleBricksAmount);
-        IntStream.generate(() -> random.nextInt(16))
-                .distinct()
-                .limit(singleBricksAmount)
-                .forEach(indexList::add);
+        List<Integer> indexList = getListOfRandomIndexes(singleBricksAmount);
 
         for (int i = 0; i < singleBricksAmount; i++) {
             int index = indexList.get(i);
@@ -270,8 +266,7 @@ public class Main extends Application {
         List<BrickRectangle> brickRectangleList = new ArrayList<>();
         int sumArea = 0;
         int type;
-        brickRectangleList.add(new BrickRectangle(BrickType.SINGLE));
-        while (sumArea < 13) {
+        while (sumArea < 14) {
             type = random.nextInt(2) + 1;
             switch (type) {
                 case 1:
@@ -393,6 +388,16 @@ public class Main extends Application {
                 resizeBrickRectangle(brickRectangle, ToSize.SMALL);
             }
         });
+    }
+
+    private List<Integer> getListOfRandomIndexes(int singleBricksAmount){
+        List<Integer> indexList = new ArrayList<>(singleBricksAmount);
+        IntStream.generate(() -> random.nextInt(16))
+                .distinct()
+                .limit(singleBricksAmount)
+                .forEach(indexList::add);
+
+        return indexList;
     }
 
     private void resizeBrickRectangle(BrickRectangle brickRectangle, ToSize toSize) {
