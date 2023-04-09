@@ -58,8 +58,9 @@ public class MiniMax {
                 setChildNodeScores(child);
             }
         });
-        Node bestChild = findBestChild(isMaxPlayer, children);
-        node.setScore(bestChild.getScore());
+        //Node bestChild = findBestChild(isMaxPlayer, children);
+        int sumOfChildrenScores = getSumOfChildrenScores(children);
+        node.setScore(sumOfChildrenScores);
     }
 
     private Node findBestChild(boolean isMaxPlayer, List<Node> children) {
@@ -73,5 +74,13 @@ public class MiniMax {
     public Tree getTree(GameState gameState) {
         constructTree(gameState);
         return tree;
+    }
+
+    private int getSumOfChildrenScores(List<Node> children){
+        return children
+                .stream()
+                .map(Node::getScore)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 }

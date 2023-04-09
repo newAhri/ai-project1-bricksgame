@@ -196,33 +196,8 @@ public class Main extends Application {
         }
 
         List<Node> childrenNodes = currentNode.getChildren();
-        List<Node> possibleChildrenNodes = new ArrayList<>();
-
-        for (Node child : childrenNodes) {
-            if (child.getScore() == (currentNode.isMaxPlayer() ? -1 : 1)) {
-                possibleChildrenNodes.add(child);
-            }
-        }
-        if (!possibleChildrenNodes.isEmpty()) {
-            random = new Random();
-            int index = random.nextInt(possibleChildrenNodes.size());
-            currentNode = possibleChildrenNodes.get(index);
-        } else {
-            currentNode = childrenNodes.stream()
-                    .filter(node -> (currentNode.isMaxPlayer() ? 1 : -1) == node.getScore())
-                    .findFirst()
-                    .get();
-        }
-
-        BrickType brickRectangleType = currentNode
-                .getGameState()
-                .getUsedBrickRectangle()
-                .getBrickType();
-
-        BrickRectangle brickRectangle = brickRectangleList.stream()
-                .filter(brick -> brick.getBrickType() == brickRectangleType)
-                .findFirst()
-                .get();
+        currentNode = getBestChildNodeByScore(childrenNodes);
+        BrickRectangle brickRectangle = getBrickRectangleForMove();
         AttachPoint attachPoint = currentNode.getGameState().getUsedAttachPoint();
 
         moveBrickRectangle(brickRectangle, attachPoint);
@@ -240,6 +215,27 @@ public class Main extends Application {
         }
 
 
+    }
+
+    private BrickRectangle getBrickRectangleForMove(){
+
+        BrickType brickRectangleType = currentNode
+                .getGameState()
+                .getUsedBrickRectangle()
+                .getBrickType();
+
+        return brickRectangleList.stream()
+                .filter(brick -> brick.getBrickType() == brickRectangleType)
+                .findFirst()
+                .get();
+    }
+
+    private Node getBestChildNodeByScore(List<Node> childrenNodes){
+
+        Comparator<Node> byScoreComparator = Comparator.comparing(Node::getScore);
+        return childrenNodes.stream()
+                .max(currentNode.isMaxPlayer() ? byScoreComparator.reversed() : byScoreComparator)
+                .orElseThrow(NoSuchElementException::new);
     }
 
     private void checkState() {
