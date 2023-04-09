@@ -15,10 +15,14 @@ public class Utils {
         BrickType type1 = gameState1.getUsedBrickRectangle().getBrickType();
         BrickType type2 = gameState2.getUsedBrickRectangle().getBrickType();
 
+        int pointIndex1 = gameState1.getUsedAttachPoint().getIndex();
+        int pointIndex2 = gameState2.getUsedAttachPoint().getIndex();
+
         boolean listsAreEqual = listsAreEqual(list1, list2);
         boolean typesAreEqual = type1 == type2;
+        boolean pointsIndexesAreEqual = pointIndex1 == pointIndex2;
 
-        if (typesAreEqual && listsAreEqual){
+        if (typesAreEqual && listsAreEqual && pointsIndexesAreEqual){
             return true;
         }
         return false;

@@ -306,7 +306,6 @@ public class Main extends Application {
 
         if (!isPlayable) {
             finishGame();
-            return;
         }
 
 
@@ -368,11 +367,10 @@ public class Main extends Application {
                     attachPointList = gameControl.updateAttachPointList(attachPoint, brickRectangle, attachPointList);
 
                     GameState currentGameState = new GameState(attachPointList, brickRectangleList);
-                    currentGameState.setUsedAttachPoint(attachPoint);
                     currentGameState.setUsedBrickRectangle(brickRectangle);
+                    currentGameState.setUsedAttachPoint(attachPoint);
                     for (Node child : currentNode.getChildren()) {
                         if (Utils.gameStatesAreEqual(child.getGameState(), currentGameState)) {
-                            child.setGameState(currentGameState);
                             currentNode = child;
                             break;
                         }
@@ -450,7 +448,7 @@ public class Main extends Application {
 
         Comparator<Node> byScoreComparator = Comparator.comparing(Node::getScore);
         return childrenNodes.stream()
-                .max(currentNode.isMaxPlayer() ? byScoreComparator.reversed() : byScoreComparator)
+                .max(currentNode.isMaxPlayer() ? byScoreComparator : byScoreComparator.reversed())
                 .orElseThrow(NoSuchElementException::new);
     }
 
